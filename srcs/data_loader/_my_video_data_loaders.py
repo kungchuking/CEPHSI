@@ -5,8 +5,8 @@ import cv2
 import os
 import numpy as np
 from tqdm import tqdm
-from os.path import join as opj
-from os.path import isfile as opif
+from os.path import join
+from os.path import isfile
 # =================
 # loading multiple frames from a video
 # =================
@@ -72,15 +72,15 @@ class VideoFrame_Dataset(Dataset):
         if isinstance(data_dir, str):
             # single dataset
             vid_names = sorted(os.listdir(data_dir))
-            vid_paths = [opj(data_dir, vid_name) for vid_name in vid_names]
-            if all(opif(vid_path) for vid_path in vid_paths):
+            vid_paths = [join(data_dir, vid_name) for vid_name in vid_names]
+            if all(isfile(vid_path) for vid_path in vid_paths):
                 # data_dir is an image dir rather than a vid dir
                 vid_paths = [data_dir]
         else:
             # multiple dataset
             for data_dir_n in sorted(data_dir):
                 vid_names_n = sorted(os.listdir(data_dir_n))
-                vid_paths_n = [opj(data_dir_n, vid_name_n)
+                vid_paths_n = [join(data_dir_n, vid_name_n)
                                for vid_name_n in vid_names_n]
                 vid_paths.extend(vid_paths_n)
 
@@ -88,7 +88,7 @@ class VideoFrame_Dataset(Dataset):
             img_names = sorted(os.listdir(vid_path))
             img_nums.append(len(img_names))
             self.img_paths.extend(
-                [opj(vid_path, img_name) for img_name in img_names])
+                [join(vid_path, img_name) for img_name in img_names])
 
         counter = 0
         for img_num in img_nums:
@@ -170,15 +170,15 @@ class VideoFrame_Dataset_all2CPU(Dataset):
         if isinstance(data_dir, str):
             # single dataset
             vid_names = sorted(os.listdir(data_dir))
-            vid_paths = [opj(data_dir, vid_name) for vid_name in vid_names]
-            if all(opif(vid_path) for vid_path in vid_paths):
+            vid_paths = [join(data_dir, vid_name) for vid_name in vid_names]
+            if all(isfile(vid_path) for vid_path in vid_paths):
                 # data_dir is an image dir rather than a vid dir
                 vid_paths = [data_dir]
         else:
             # multiple dataset
             for data_dir_n in sorted(data_dir):
                 vid_names_n = sorted(os.listdir(data_dir_n))
-                vid_paths_n = [opj(data_dir_n, vid_name_n)
+                vid_paths_n = [join(data_dir_n, vid_name_n)
                                for vid_name_n in vid_names_n]
                 vid_paths.extend(vid_paths_n)
 
@@ -186,7 +186,7 @@ class VideoFrame_Dataset_all2CPU(Dataset):
             img_names = sorted(os.listdir(vid_path))
             img_nums.append(len(img_names))
             self.img_paths.extend(
-                [opj(vid_path, img_name) for img_name in img_names])
+                [join(vid_path, img_name) for img_name in img_names])
 
         # img_shape = None
         for img_path in tqdm(self.img_paths, desc='⏳ Loading dataset to Memory'):
@@ -251,7 +251,7 @@ class Blurimg_RealExp_Dataset_all2CPU:
         # get blurry imag path
         if isinstance(data_dir, str):
             blur_names = sorted(os.listdir(data_dir))
-            self.blur_paths = [opj(data_dir, blur_name)
+            self.blur_paths = [join(data_dir, blur_name)
                                for blur_name in blur_names]
         else:
             raise ValueError('data_dir should be a str')
