@@ -22,7 +22,14 @@ def test_worker(gpus, config):
     # prepare model & checkpoint for testing
     # load checkpoint
     logger.info(f"💡 Loading checkpoint: {config.checkpoint} ...")
-    checkpoint = torch.load(config.checkpoint)
+
+    # -- Added by Chu King on October 24, 2024
+    # -- Load the checkpoint onto CPUs in case GPUs are not available.
+    if torch.cuda.is_available():
+        checkpoint = torch.load(config.checkpoint)
+    else:
+        checkpoint = torch.load(config.checkpoint, map_location=torch.device("cpu"))
+
     logger.info("💡 Checkpoint loaded!")
 
     # select config file

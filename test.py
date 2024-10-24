@@ -9,7 +9,7 @@ from importlib import import_module
 # ===============
 
 
-@hydra.main(config_path='conf', config_name='cebd_test')
+@hydra.main(config_path='conf', config_name='cebd_test', version_base="1.1")
 def main(config):
     # GPU setting
     if not config.gpus or config.gpus == -1:
@@ -18,8 +18,17 @@ def main(config):
         gpus = config.gpus
     os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, gpus))
     n_gpu = len(gpus)
+
+    """
     assert n_gpu <= torch.cuda.device_count(
     ), 'Can\'t find %d GPU device on this machine.' % (n_gpu)
+    """
+    # -- Modified by Chu King on October 24, 2024
+    # -- The machine doesn't necessarily have GPUs.
+    if n_gpu == 0:
+        print ("\n[WARNING] No GPU found. Running on CPU.\n")
+    else:
+        print ("\n[INFO] Using {} GPU(s).\n".format(n_gpu))
 
     # show config
     config_v = OmegaConf.to_yaml(config, resolve=True)

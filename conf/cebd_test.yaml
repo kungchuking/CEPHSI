@@ -38,5 +38,6 @@ defaults:
   - data: vid_test_data
   - network: cebd
   - override hydra/job_logging : custom
-  - override hydra/hydra_logging: colorlog
+    # - override hydra/hydra_logging: colorlog
+  - override hydra/hydra_logging: default
   - _self_
