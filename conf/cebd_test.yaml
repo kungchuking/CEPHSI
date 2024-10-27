@@ -7,7 +7,7 @@ hydra:
       subdir: ${hydra.job.override_dirname}
 
 ##### dir
-exp_name: code_dev/BDNeRV_RC  # experiment name
+exp_name: code_dev/CEPHSI     # experiment name
 tester_name: cebd_tester      # tester name
 status: test                  # run status
 checkpoint: ${hydra:runtime.cwd}/checkpoints/model.pth  # loading checkpoint ${hydra:runtime.cwd}

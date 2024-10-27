@@ -7,7 +7,7 @@ hydra:
       subdir: ${hydra.job.override_dirname}
 
 ##### dir
-exp_name: code_dev/BDNeRV_RC  # experiment name
+exp_name: code_dev/CEPHSI     # experiment name
 trainer_name: cebd_trainer    # trainer name
 status: train                 # run status
 resume_conf:                  # resume configuration, default=[epoch, optimizer]

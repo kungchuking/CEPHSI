@@ -17,8 +17,8 @@ class CEBlurNet(nn.Module):
         self.sigma_range = sigma_range
         self.test_sigma_range = test_sigma_range
         self.frame_n = frame_n  # frame num
-        self.time_idx = torch.linspace(
-            0, 1, ce_code_n).unsqueeze(0).t()  # time idx
+
+        self.time_idx = torch.linspace(0, 1, ce_code_n).unsqueeze(0).t()  # time idx
         self.upsample_factor = frame_n//ce_code_n
         self.binary_fc = BinaryDict[binary_fc]
         self.ce_code_n = ce_code_n
@@ -45,8 +45,10 @@ class CEBlurNet(nn.Module):
     def forward(self, frames):
         device = frames.device
         ce_code = self.binary_fc(self.ce_weight)  # weights binarized
-        ce_code_up = torch.matmul(
-            self.upsample_matrix.to(device), ce_code)
+
+        # -- self.upsample_matrix is an identity matrix when we are not doing temporal upsampling
+        ce_code_up = torch.matmul(self.upsample_matrix.to(device), ce_code)
+
         assert ce_code_up.data.shape[0] == frames.shape[
             1], f'frame num({frames.shape[1]}) is not equal to CeCode length({ce_code_up.shape[0]})'
 

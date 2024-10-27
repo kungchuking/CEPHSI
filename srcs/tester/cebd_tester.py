@@ -7,9 +7,11 @@ from tqdm import tqdm
 from srcs.utils.util import instantiate
 from srcs.utils.utils_image_kair import tensor2uint, imsave
 
+# -- Added by Chu King on Oct 27, 2024 to compute the total FLOPs programmatically in PyTorch
+from thop import profile
+
 def testing(gpus, config):
     test_worker(gpus, config)
-
 
 def test_worker(gpus, config):
     # prevent access to non-existing keys
@@ -80,6 +82,15 @@ def test(data_loader, model,  device, criterion, metrics, config, logger=None):
     model.eval()
     total_metrics = torch.zeros(len(metrics), device=device)
     time_start = time.time()
+
+    # -- Added by Chu King on Oct 27, 2024
+    # -- Profile the model
+    flops, params = profile(model, inputs=(data_loader[0],))
+    # -- Write the results of profiling into the log file.
+    logger.info("[INFO] Input Size: ".format(data_loader[0].shape))
+    logger.info("[INFO] FLOPs: ".format(flops))
+    logger.info("[INFO] Parameters: ".format(params))
+
     with torch.no_grad():
         for i, vid in enumerate(tqdm(data_loader, desc='⏳ Testing')):
             # move vid to gpu, convert to 0-1 float

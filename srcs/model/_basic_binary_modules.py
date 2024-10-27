@@ -43,6 +43,10 @@ BinaryTensor = NewType('BinaryTensor', torch.Tensor)
 
 def binary_sign(x: torch.Tensor) -> BinaryTensor:
     """Return -1 if x < 0, 1 if x >= 0."""
+    # -- x.sign() returns a new tensor with the signs of each element in x.
+    # -- If an element is negative, it returns -1
+    # -- If an element is potitive, it returns +1
+    # -- If an element is zero, it returns 0
     return x.sign() + (x == 0).type(torch.float)  # type: ignore
 
 
