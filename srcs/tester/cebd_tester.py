@@ -10,10 +10,12 @@ from srcs.utils.utils_image_kair import tensor2uint, imsave
 # -- Added by Chu King on Oct 27, 2024 to compute the total FLOPs programmatically in PyTorch
 from thop import profile
 
-def testing(gpus, config):
-    test_worker(gpus, config)
+# -- An extra argument, ld_checkpoint, added by Chu King on Oct 27, 2024
+# -- Allow for the flexibility to not load any checkpoints when profiling
+def testing(gpus, config, ld_checkpoint=True):
+    test_worker(gpus, config, ld_checkpoint)
 
-def test_worker(gpus, config):
+def test_worker(gpus, config, ld_checkpoint=True):
     # prevent access to non-existing keys
     OmegaConf.set_struct(config, True)
 
@@ -48,7 +50,10 @@ def test_worker(gpus, config):
 
     # load weight
     state_dict = checkpoint['state_dict']
-    model.load_state_dict(state_dict)
+
+    # -- Added by Chu King to allow for the flexibility of not loading checkpoints when profiling the network.
+    if ld_checkpoint:
+        model.load_state_dict(state_dict)
 
     # instantiate loss and metrics
     criterion=None # don't calc loss in test
@@ -85,11 +90,11 @@ def test(data_loader, model,  device, criterion, metrics, config, logger=None):
 
     # -- Added by Chu King on Oct 27, 2024
     # -- Profile the model
-    flops, params = profile(model, inputs=(data_loader[0],))
+    flops, params = profile(model, inputs=(next(iter(data_loader)),))
     # -- Write the results of profiling into the log file.
-    logger.info("[INFO] Input Size: ".format(data_loader[0].shape))
-    logger.info("[INFO] FLOPs: ".format(flops))
-    logger.info("[INFO] Parameters: ".format(params))
+    logger.info("[INFO] Input Size: {}".format(next(iter(data_loader)).shape))
+    logger.info("[INFO] FLOPs: {}".format(flops))
+    logger.info("[INFO] Parameters: {}".format(params))
 
     with torch.no_grad():
         for i, vid in enumerate(tqdm(data_loader, desc='⏳ Testing')):

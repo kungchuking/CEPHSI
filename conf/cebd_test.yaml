@@ -16,7 +16,8 @@ outputs_dir: outputs/
 ##### run
 gpus: [3]             # GPU used, Warning: Only one GPU is supported for 'test' now
 num_workers: 2        # number of cpu worker
-save_img: true       # save the reconstructed images
+save_img: true        # save the reconstructed images
+ld_checkpoint: false  # Disable the loading of checkpoints when profiling
 
 # params
 frame_n: 8

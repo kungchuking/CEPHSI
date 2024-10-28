@@ -7,6 +7,9 @@ from .base import BaseTrainer
 from srcs.utils.util import collect, instantiate, get_logger
 from srcs.logger import BatchMetrics
 
+# -- Added by Chu King on Oct 27 for profiling purposes.
+from thop import profile
+
 #======================================
 # Trainer: modify '_train_epoch'
 #======================================
@@ -69,15 +72,27 @@ class Trainer(BaseTrainer):
         :param epoch: Integer, current training epoch.
         :return: A log that contains average loss and metric in this epoch.
         """
+
+        # -- Tells the model that we are training it.
+        # -- This helps inform layers such as Dropout and BatchNorm, which are designed to behave
+        #    differently during training and evaluation.
+        # -- For instance, in training mode, BatchNorm updates a moving average ono each new batch;
+        #    whereas, for evaluation mode, these updates are frozen.
+        # -- We can call either model.eval() or model.train(mode=False) for testing.
         self.model.train()
         self.train_metrics.reset()
         interp_scale = self.model.frame_n//self.model.ce_code_n
 
         for batch_idx, vid in enumerate(self.data_loader):  # video_dataloader
             
-            vid = vid.to(self.device).float()/255 
+            try:
+                vid = vid.to(self.device).float()/255 
+            except RuntimeError:
+                vid = vid.to("cpu").float()/255
+
             target = vid[:,::interp_scale]
 
+            # -- That's where training starts.
             output, data, data_noisy = self.model(vid)
             output_ = torch.flatten(output, end_dim=1)
             target_ = torch.flatten(target, end_dim=1)
@@ -159,7 +174,11 @@ class Trainer(BaseTrainer):
         self.valid_metrics.reset()
         with torch.no_grad():
             for batch_idx, vid in enumerate(self.valid_data_loader):
-                vid = vid.to(self.device).float()/255
+                try:
+                    vid = vid.to(self.device).float()/255
+                except RuntimeError:
+                    vid = vid.to("cpu").float()/255
+
                 target = vid[:,::interp_scale]
 
                 # forward
@@ -224,11 +243,11 @@ class Trainer(BaseTrainer):
 
 
 #======================================
-# Trainning: run Trainer for trainning
+# Training: run Trainer for training
 #======================================
 
 
-def trainning(gpus, config):
+def training(gpus, config):
     # enable access to non-existing keys
     OmegaConf.set_struct(config, False)
     n_gpu = len(gpus)
@@ -267,6 +286,13 @@ def train_worker(config):
     # build optimizer, learning rate scheduler.
     optimizer = instantiate(config.optimizer, model.parameters())
     lr_scheduler = instantiate(config.lr_scheduler, optimizer)
+
+    # -- Profile the network before training.
+    flops, params = profile(model, (next(iter(data_loader)),)) 
+
+    logger.info(f"[INFO] FLOPs: {flops * 1e-9} GFLOPs")
+    logger.info(f"[INFO] Parameters: {params}")
+
     trainer = Trainer(model, criterion, metrics, optimizer,
                       config=config,
                       data_loader=data_loader,

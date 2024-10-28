@@ -2,6 +2,9 @@ import torch.nn as nn
 from srcs.model.bd_model import BDNeRV_RC
 from srcs.model.ce_model import CEBlurNet
 
+# -- Added by Chu King on Oct 28, 2024 for the deployment of MobileNetV2 Auto Encoder
+from srcs.model.mobile_net_v2_backbone import MobileNetV2CAE 
+
 class CEBDNet(nn.Module):
     '''
     coded exposure blur decomposition network
@@ -21,6 +24,11 @@ class CEBDNet(nn.Module):
         # blur decomposition net
         if bd_net=='BDNeRV_RC':
             self.DeBlurNet = BDNeRV_RC()
+        # -- Added by Chu King on Oct 28, 2024
+        # -- Uses Mobile Net V2 for deblurring.
+        elif bd_net == "MobileNetV2CAE":
+            # -- TODO: might need to change the in_channels to 4 for 2-tap, 2-cam, grayscale images  
+            self.DeBlurNet = MobileNetV2CAE(in_channels=3, frame_n=self.frame_n)
         else:
             raise NotImplementedError(f'No model named {bd_net}')
 

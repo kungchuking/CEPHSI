@@ -9,8 +9,10 @@ class BDNeRV_RC(nn.Module):
         super(BDNeRV_RC, self).__init__()
         # params
         n_colors = 3
-        n_resblock = 4
-        n_feats = 32
+        # -- n_resblock = 4
+        n_resblock = 0
+        # -- n_feats = 32
+        n_feats = 8
         kernel_size = 3
         padding = 1
 
@@ -23,8 +25,12 @@ class BDNeRV_RC(nn.Module):
                               kernel_size=kernel_size, padding=padding)
 
         # output block
+        """
         OutBlock = [ResBlock(Conv, n_feats=n_feats, kernel_size=kernel_size, padding=padding),
                     ResBlock(Conv, n_feats=n_feats, kernel_size=kernel_size, padding=padding),
+                    Conv(input_channels=n_feats, n_feats=n_colors, kernel_size=kernel_size, padding=padding)]
+        """
+        OutBlock = [ResBlock(Conv, n_feats=n_feats, kernel_size=kernel_size, padding=padding),
                     Conv(input_channels=n_feats, n_feats=n_colors, kernel_size=kernel_size, padding=padding)]
         self.out = nn.Sequential(*OutBlock)
 
@@ -51,21 +57,29 @@ class BDNeRV_RC(nn.Module):
         #        |       
         #        V
         # -- The numbers of input and output channels are both n_feats=32 in the original code.
+        """
         FeatureBlock = [Conv(input_channels=n_colors, n_feats=n_feats, kernel_size=kernel_size, padding=padding, act=True),
                         ResBlock(Conv, n_feats=n_feats,
                                  kernel_size=kernel_size, padding=padding),
                         ResBlock(Conv, n_feats=n_feats,
                                  kernel_size=kernel_size, padding=padding),
                         ResBlock(Conv, n_feats=n_feats, kernel_size=kernel_size, padding=padding)]
+        """
+        FeatureBlock = [Conv(input_channels=n_colors, n_feats=n_feats, kernel_size=kernel_size, padding=padding, act=True),
+                        ResBlock(Conv, n_feats=n_feats, kernel_size=kernel_size, padding=padding)]
         self.feature = nn.Sequential(*FeatureBlock)
 
         # concatenation fusion block
+        """
         CatFusion = [Conv(input_channels=n_feats*2, n_feats=n_feats, kernel_size=kernel_size, padding=padding, act=True),
                         ResBlock(Conv, n_feats=n_feats,
                                  kernel_size=kernel_size, padding=padding),
                         ResBlock(Conv, n_feats=n_feats,
                                  kernel_size=kernel_size, padding=padding),
                         ResBlock(Conv, n_feats=n_feats, kernel_size=kernel_size, padding=padding)]
+        """
+        CatFusion = [Conv(input_channels=n_feats*2, n_feats=n_feats, kernel_size=kernel_size, padding=padding, act=True),
+                     ResBlock(Conv, n_feats=n_feats, kernel_size=kernel_size, padding=padding)]
         self.catfusion = nn.Sequential(*CatFusion)
 
         # -- Positional encoding maps the frame index to high-dimensional embedding space, enhancing the network's capacity 

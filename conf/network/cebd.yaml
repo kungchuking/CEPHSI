@@ -9,7 +9,8 @@ arch:
   opt_cecode: false
   ce_net: CEBlurNet
   binary_fc: STEBinary_fc
-  bd_net: BDNeRV_RC
+  # bd_net: BDNeRV_RC
+  bd_net: MobileNetV2CAE
 loss: {'main_loss':1, 'reblur_loss':0.2}
 main_loss:
   _target_: srcs.loss._pix_loss_cls.WeightedLoss

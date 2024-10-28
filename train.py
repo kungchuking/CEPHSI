@@ -26,8 +26,14 @@ def main(config):
     else:
         gpus = config.gpus
     os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, gpus))
-    assert len(gpus) <= torch.cuda.device_count(
-    ), f'There are {torch.cuda.device_count()} GPUs on this machine, but you assigned $gpus={gpus}.'
+
+    # -- assert len(gpus) <= torch.cuda.device_count(
+    # -- ), f'There are {torch.cuda.device_count()} GPUs on this machine, but you assigned $gpus={gpus}.'
+
+    # -- Added by Chu King on Oct 27, 2024
+    # -- Downgrade the error to warning to allow the program to run without GPUs.
+    if not (len(gpus) <= torch.cuda.device_count()):
+        print (f'[WARNING] There are {torch.cuda.device_count()} GPUs on this machine, but you assigned $gpus={gpus}.'"[WA") 
     
     # resume
     config_v = OmegaConf.to_yaml(config, resolve=True)
@@ -38,7 +44,7 @@ def main(config):
     # training
     trainer_name = 'srcs.trainer.%s' % config.trainer_name
     training_module = import_module(trainer_name)
-    training_module.trainning(gpus, config)
+    training_module.training(gpus, config)
 
 
 if __name__ == '__main__':

@@ -4,6 +4,8 @@ import hydra
 from omegaconf import OmegaConf
 from importlib import import_module
 
+import sys
+
 # ===============
 # assign "config_name" and import testing module
 # ===============
@@ -37,8 +39,14 @@ def main(config):
     # testing
     tester_name = 'srcs.tester.%s' % config.tester_name
     testing_module = import_module(tester_name)
-    testing_module.testing(gpus, config)
 
+    # -- Added by Chu King on Oct 27, 2024
+    # -- Allow for the flexibility to not load any checkpoints when profiling
+    # -- Execute test.py -p to enter the profiling mode.
+    try:
+        testing_module.testing(gpus, config, ld_checkpoint=config.ld_checkpoint)
+    except Exception as e:
+        testing_module.testing(gpus, config)
 
 if __name__ == '__main__':
     # pylint: disable=no-value-for-parameter

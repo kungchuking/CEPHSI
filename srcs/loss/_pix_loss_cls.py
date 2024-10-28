@@ -67,7 +67,10 @@ class CharbonnierLoss(nn.Module):
         self.eps = eps
 
     def forward(self, output, target):
-        diff = output.to('cuda:0') - target.to('cuda:0')
+        try:
+            diff = output.to('cuda:0') - target.to('cuda:0')
+        except RuntimeError:
+            diff = output.to('cpu') - target.to('cpu')
         loss = torch.mean(torch.sqrt((diff * diff) + (self.eps*self.eps)))
         return loss
 
@@ -156,8 +159,12 @@ class EdgeLoss(nn.Module):
         return diff
 
     def forward(self, output, target):
-        loss = self.loss(self.laplacian_kernel(output.to('cuda:0')),
-                         self.laplacian_kernel(target.to('cuda:0')))
+        try:
+            loss = self.loss(self.laplacian_kernel(output.to('cuda:0')),
+                             self.laplacian_kernel(target.to('cuda:0')))
+        except RuntimeError:
+            loss = self.loss(self.laplacian_kernel(output.to('cpu')),
+                             self.laplacian_kernel(target.to('cpu')))
         return loss
 
 
@@ -167,8 +174,12 @@ class FFTLoss(nn.Module):
         super(FFTLoss, self).__init__()
 
     def forward(self, output, target):
-        diff = torch.fft.fft2(output.to('cuda:0')) - \
-            torch.fft.fft2(target.to('cuda:0'))
+        try:
+            diff = torch.fft.fft2(output.to('cuda:0')) - \
+                torch.fft.fft2(target.to('cuda:0'))
+        except RuntimeError:
+            diff = torch.fft.fft2(output.to('cpu')) - \
+                torch.fft.fft2(target.to('cpu'))
         loss = torch.mean(abs(diff))
         return loss
 

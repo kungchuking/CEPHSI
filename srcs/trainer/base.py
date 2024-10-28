@@ -22,7 +22,10 @@ class BaseTrainer(metaclass=ABCMeta):
         self.logger = get_logger('trainer')
 
         self.device = config.local_rank if config.n_gpu > 1 else 0
-        self.model = model.to(self.device)
+        try:
+            self.model = model.to(self.device)
+        except RuntimeError:
+            self.model = model.to("cpu")
 
         if config.n_gpu > 1:
             # multi GPU
