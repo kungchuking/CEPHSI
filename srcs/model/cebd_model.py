@@ -9,7 +9,18 @@ class CEBDNet(nn.Module):
     '''
     coded exposure blur decomposition network
     '''
-    def __init__(self, sigma_range=0, test_sigma_range=0, ce_code_n=8, frame_n=8, ce_code_init=None, opt_cecode=False, ce_net=None, binary_fc=None, bd_net=None):
+    def __init__(self,
+            sigma_range=0,
+            test_sigma_range=0,
+            ce_code_n=8,
+            frame_n=8,
+            ce_code_init=None,
+            opt_cecode=False,
+            ce_net=None,
+            binary_fc=None,
+            bd_net=None,
+            in_channels=3,
+            out_channels=3):
         super(CEBDNet, self).__init__()
         self.ce_code_n = ce_code_n
         self.frame_n = frame_n
@@ -28,12 +39,15 @@ class CEBDNet(nn.Module):
         # -- Uses Mobile Net V2 for deblurring.
         elif bd_net == "MobileNetV2CAE":
             # -- TODO: might need to change the in_channels to 4 for 2-tap, 2-cam, grayscale images  
-            self.DeBlurNet = MobileNetV2CAE(in_channels=3, frame_n=self.frame_n)
+            self.DeBlurNet = MobileNetV2CAE(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    frame_n=self.frame_n)
         else:
             raise NotImplementedError(f'No model named {bd_net}')
 
     def forward(self, frames):
-        ce_blur_img_noisy, time_idx, ce_code_up, ce_blur_img = self.BlurNet(
-            frames)
+        ce_blur_img_noisy, time_idx, ce_code_up, ce_blur_img = self.BlurNet(frames)
+
         output = self.DeBlurNet(ce_blur=ce_blur_img_noisy, time_idx=time_idx, ce_code=ce_code_up)
         return output, ce_blur_img, ce_blur_img_noisy

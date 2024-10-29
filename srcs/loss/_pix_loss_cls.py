@@ -4,6 +4,10 @@ import torch.nn.functional as F
 import numpy as np
 from pytorch_msssim import SSIM, MS_SSIM  # pip install pytorch-msssim
 
+# -- Added by Chu King on Oct 28, 2024 to resolve errors when changing the yaml
+#    file to take parameters.
+from omegaconf import ListConfig
+
 # ===========================
 # global loss info extract
 # ===========================
@@ -35,7 +39,12 @@ class WeightedLoss(nn.Module):
 
         # instantiate classes
         self.losses = []
+        cnt = 0
         for k, v in loss_conf_dict.items():
+            # -- Added by Chu King on Oct 28, 2024 to resolve errors when changing the yaml
+            #    file to take parameters.
+            v = list(v) if isinstance(v, ListConfig) else v
+
             if isinstance(v, (float, int)):
                 assert v >= 0, f"loss'weight {k}:{v} should be positive"
                 self.losses.append({'cls': LOSSES[k](), 'weight': v})
@@ -136,10 +145,16 @@ class SSIMLoss(SSIM):
 
 @add2loss
 class EdgeLoss(nn.Module):
-    def __init__(self):
+    # -- Modified by Chu King on Oct 28, 2024 to allow for input channel
+    #    number other than 3
+    def __init__(self, channel=3):
         super(EdgeLoss, self).__init__()
         k = torch.Tensor([[.05, .25, .4, .25, .05]])
-        self.kernel = torch.matmul(k.t(), k).unsqueeze(0).repeat(3, 1, 1, 1)
+
+        # -- Modified by Chu King on Oct 28, 2024 to allow for input channel
+        #    number other than 3
+        # -- self.kernel = torch.matmul(k.t(), k).unsqueeze(0).repeat(3, 1, 1, 1)
+        self.kernel = torch.matmul(k.t(), k).unsqueeze(0).repeat(channel, 1, 1, 1)
         if torch.cuda.is_available():
             self.kernel = self.kernel.to('cuda:0')
         self.loss = CharbonnierLoss()

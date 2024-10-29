@@ -11,3 +11,4 @@ num_workers: ${num_workers}
 pin_memory: True
 prefetch_factor: 2
 all2CPU: False
+grayscale: True

@@ -55,7 +55,7 @@ class VideoFrame_Dataset(Dataset):
     datasetfor training or test (with ground truth)
     """
 
-    def __init__(self, data_dir, frame_num, patch_sz=None, tform_op=None, sigma_range=0, stride=1):
+    def __init__(self, data_dir, frame_num, patch_sz=None, tform_op=None, sigma_range=0, stride=1, grayscale=False):
         super(VideoFrame_Dataset, self).__init__()
         self.sigma_range = sigma_range
         self.patch_sz = [patch_sz] * \
@@ -65,6 +65,7 @@ class VideoFrame_Dataset(Dataset):
         self.img_paths = []
         self.vid_idx = []
         self.stride = stride  # stride of the starting frame
+        self.grayscale = grayscale
 
         # get image paths
         img_nums = []
@@ -103,7 +104,12 @@ class VideoFrame_Dataset(Dataset):
             # read image
             img = cv2.imread(self.img_paths[k])
             assert img is not None, 'Image read falied'
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            if self.grayscale:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                img = img[:, :, np.newaxis]
+            else:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
             if self.patch_sz:
                 if k == self.vid_idx[idx]:
@@ -152,7 +158,7 @@ class VideoFrame_Dataset_all2CPU(Dataset):
     Dataset for training or test (with ground truth), load entire dataset to CPU to speed the data load process
     """
 
-    def __init__(self, data_dir, frame_num, patch_sz=None, tform_op=None, sigma_range=0, stride=1):
+    def __init__(self, data_dir, frame_num, patch_sz=None, tform_op=None, sigma_range=0, stride=1, grayscale=False):
         super(VideoFrame_Dataset_all2CPU, self).__init__()
         self.sigma_range = sigma_range
         self.patch_sz = [patch_sz] * \
@@ -192,7 +198,12 @@ class VideoFrame_Dataset_all2CPU(Dataset):
         for img_path in tqdm(self.img_paths, desc='⏳ Loading dataset to Memory'):
             img = cv2.imread(img_path)
             assert img is not None, 'Image read falied'
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            if grayscale:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                img = img[:, :, np.newaxis]
+            else:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             self.imgs.append(img)
 
         counter = 0
@@ -243,7 +254,7 @@ class Blurimg_RealExp_Dataset_all2CPU:
     Dataset for real test: load real blurry image with no gt
     """
 
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, grayscale=False):
         super(Blurimg_RealExp_Dataset_all2CPU, self).__init__()
         self.data_dir = data_dir
         self.imgs = []
@@ -260,7 +271,12 @@ class Blurimg_RealExp_Dataset_all2CPU:
         for img_path in tqdm(self.blur_paths, desc='⏳ Loading dataset to Memory'):
             img = cv2.imread(img_path)
             assert img is not None, 'Image read falied'
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            if grayscale:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                img = img[:, :, np.newaxis]
+            else:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             self.imgs.append(img)
 
     def __getitem__(self, idx):
@@ -276,24 +292,37 @@ class Blurimg_RealExp_Dataset_all2CPU:
 # get dataloader
 # =================
 
-def get_data_loaders(data_dir, frame_num, batch_size, patch_size=None, tform_op=None, sigma_range=0, shuffle=True, validation_split=0.1, status='train', num_workers=8, pin_memory=False, prefetch_factor=2, all2CPU=True):
+def get_data_loaders(
+        data_dir,
+        frame_num,
+        batch_size,
+        patch_size=None,
+        tform_op=None,
+        sigma_range=0,
+        shuffle=True,
+        validation_split=0.1,
+        status='train',
+        num_workers=8,
+        pin_memory=False,
+        prefetch_factor=2,
+        grayscale=False,
+        all2CPU=True):
     if status == 'train':
         if all2CPU:
             dataset = VideoFrame_Dataset_all2CPU(
-                data_dir, frame_num, patch_size, tform_op, sigma_range)
+                data_dir, frame_num, patch_size, tform_op, sigma_range, grayscale=grayscale)
         else:
             dataset = VideoFrame_Dataset(
-                data_dir, frame_num, patch_size, tform_op, sigma_range)
+                data_dir, frame_num, patch_size, tform_op, sigma_range, grayscale=grayscale)
     elif status == 'test':
         if all2CPU:
             dataset = VideoFrame_Dataset_all2CPU(
-                data_dir, frame_num, patch_size, tform_op, sigma_range, frame_num)
+                data_dir, frame_num, patch_size, tform_op, sigma_range, frame_num, grayscale=grayscale)
         else:
             dataset = VideoFrame_Dataset(
-                data_dir, frame_num, patch_size, tform_op, sigma_range, frame_num)
+                data_dir, frame_num, patch_size, tform_op, sigma_range, frame_num, grayscale=grayscale)
     elif status == 'real_test':
-        dataset = Blurimg_RealExp_Dataset_all2CPU(
-            data_dir)  # direct loading blurry image
+        dataset = Blurimg_RealExp_Dataset_all2CPU(data_dir, grayscale=grayscale)  # direct loading blurry image
     else:
         raise NotImplementedError(
             f"status ({status}) should be 'train' | 'test' ")

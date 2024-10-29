@@ -279,8 +279,7 @@ def train_worker(config):
     if 'main_loss' in config.loss:
         criterion['main_loss'] = instantiate(config.main_loss)
     if 'reblur_loss' in config.loss:
-        criterion['reblur_loss'] = instantiate(
-            config.reblur_loss)
+        criterion['reblur_loss'] = instantiate(config.reblur_loss)
     metrics = [instantiate(met) for met in config['metrics']]
 
     # build optimizer, learning rate scheduler.

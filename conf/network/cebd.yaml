@@ -9,12 +9,16 @@ arch:
   opt_cecode: false
   ce_net: CEBlurNet
   binary_fc: STEBinary_fc
-  # bd_net: BDNeRV_RC
+  # -- bd_net: BDNeRV_RC
   bd_net: MobileNetV2CAE
+  in_channels: 1   # -- Gray-scale, 1-Tap, 1-Cam
+  out_channels: 1  # -- Gray-scale
 loss: {'main_loss':1, 'reblur_loss':0.2}
 main_loss:
   _target_: srcs.loss._pix_loss_cls.WeightedLoss
-  loss_conf_dict: {'CharbonnierLoss':1.0, 'SSIMLoss':0.05, 'EdgeLoss':0.05}
+  # -- loss_conf_dict: {'CharbonnierLoss':1.0, 'SSIMLoss':0.05, 'EdgeLoss':0.05}
+  # -- Modified by Chu King on Oct 28, 2024 to support channel number other than 3
+  loss_conf_dict: {'CharbonnierLoss':1.0, 'SSIMLoss':[0.05, {"channel": 1}], 'EdgeLoss':[0.05, {"channel": 1}]}
 reblur_loss:
   _target_: srcs.loss._pix_loss_cls.CharbonnierLoss
 
