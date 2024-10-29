@@ -5,6 +5,7 @@ import torch.nn as nn
 from torchsummary import summary
 
 from thop import profile
+from calflops import calculate_flops
 
 DEBUG = False
 
@@ -152,15 +153,11 @@ class MobileNetV2CAE(nn.Module):
 
         x = self.decoder(x)
 
-        # -- TODO: Work in Progress 
-        if DEBUG:
-            quit()
-
         return torch.reshape(x, (-1, self.frame_n, *ce_blur.shape[-3:]))
 
 """
 if DEBUG:
-    model = MobileNetV2CAE(in_channels=3)
+    model = MobileNetV2CAE(in_channels=1, n_feats=1)
     
     # Instantiate the model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -170,6 +167,8 @@ if DEBUG:
     
     # -- z = model(torch.randn(1, 3, 480, 640))
     
-    flops, params = profile(model, (torch.randn(1, 3, 480, 640),))
-    print(f"FLOPs: {flops*1e-9}")
+    flops, macs, params = calculate_flops(model=model, input_shape=(1, 1, 720, 1280))
+    flops, params = profile(model, (torch.randn(1, 1, 720, 1280),))
+    print (macs)
+    print(f"FLOPs: {flops*1e-9} GFLOPs")
 """
