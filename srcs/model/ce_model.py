@@ -12,17 +12,35 @@ class CEBlurNet(nn.Module):
     - weight binarize: STE-LBSIGN
     '''
 
-    def __init__(self, sigma_range=0, test_sigma_range=0, ce_code_n=8, frame_n=8, ce_code_init=None, opt_cecode=False, binary_fc=None):
+    def __init__(self,
+            sigma_range=0,
+            test_sigma_range=0,
+            ce_code_n=8,
+            frame_n=8,
+            ce_code_init=None,
+            opt_cecode=False,
+            patch_size=[720, 1280],
+            in_channels=3,
+            binary_fc=None):
         super(CEBlurNet, self).__init__()
         self.sigma_range = sigma_range
         self.test_sigma_range = test_sigma_range
         self.frame_n = frame_n  # frame num
 
         self.time_idx = torch.linspace(0, 1, ce_code_n).unsqueeze(0).t()  # time idx
-        self.upsample_factor = frame_n//ce_code_n
+        self.upsample_factor = frame_n // ce_code_n
+
         self.binary_fc = BinaryDict[binary_fc]
         self.ce_code_n = ce_code_n
-        self.ce_weight = nn.Parameter(torch.Tensor(ce_code_n, 1))
+        
+        # -- Added by Chu King on Oct, 29 2024, as these parameters will be used during the invocation of the forward() method.
+        self.in_channels = in_channels
+        self.patch_size = patch_size
+
+        # -- Modified by Chu King on Oct, 29, 2024 for pixel-wise CEP
+        # -- self.ce_weight = nn.Parameter(torch.Tensor(ce_code_n, 1))
+        self.ce_weight = nn.Parameter(torch.Tensor(ce_code_n, in_channels, *patch_size))
+
         if ce_code_init is None:
             nn.init.uniform_(self.ce_weight, a=-1, b=1)  # initialize
         else:
@@ -31,30 +49,46 @@ class CEBlurNet(nn.Module):
                             0 else 1 for k in range(len(ce_code_init))]
             self.ce_weight.data = torch.tensor(
                 ce_code_init, dtype=torch.float32).unsqueeze(0).t()
+
         if not opt_cecode:
             # whether optimize ce code
             self.ce_weight.requires_grad = False
 
-        # upsample matrix for ce_code(parameters)
-        self.upsample_matrix = torch.zeros(
-            self.upsample_factor * ce_code_n, ce_code_n)
+        # -- upsample matrix for ce_code(parameters)
+        # -- Commented out by Chu King on Oct 29, 2024.
+        # -- The upsampling matrix only works when self.ce_weight is a 2D tensor.
+        # -- For pixel-wise coded exposure, self.ce_weight will be a 4D tensor (i.e. [ce_code_n, in_channels, H, W])
+        """
+        self.upsample_matrix = torch.zeros(self.upsample_factor * ce_code_n, ce_code_n)
+
         for k in range(ce_code_n):
             self.upsample_matrix[k *
                                  self.upsample_factor:(k+1)*self.upsample_factor, k] = 1
+        """
 
     def forward(self, frames):
         device = frames.device
         ce_code = self.binary_fc(self.ce_weight)  # weights binarized
 
         # -- self.upsample_matrix is an identity matrix when we are not doing temporal upsampling
-        ce_code_up = torch.matmul(self.upsample_matrix.to(device), ce_code)
+        # -- ce_code_up = torch.matmul(self.upsample_matrix.to(device), ce_code)
+        # -- Modified by Chu King on Oct 29, 2024 for pixel-wise CEP
+        ce_code_up = torch.zeros(self.upsample_factor * self.ce_code_n, self.in_channels, *self.patch_size)
 
-        assert ce_code_up.data.shape[0] == frames.shape[
-            1], f'frame num({frames.shape[1]}) is not equal to CeCode length({ce_code_up.shape[0]})'
+        # -- Fill the upsampled matrix
+        # -- We are not using matrix multiplication for CEP, as the multiplication of two high-dimensional tensors is hard to visualize.
+        for i in range(self.ce_code_n):
+            ce_code_up[i * self.upsample_factor:(i + 1) * self.upsample_factor, :, :, :] = ce_code[i]
 
-        ce_code_up_ = ce_code_up.view(self.frame_n, 1, 1, 1).expand_as(frames)
-        ce_blur_img = torch.sum(
-            ce_code_up_*frames, axis=1)/self.frame_n
+        # -- Commented out by Chu King on Oct 29, 2024 as the equation ce_code_up.data.shape[0] == frames.shape[1] no longer holds for pixel-wise CEP.
+        # -- assert ce_code_up.data.shape[0] == frames.shape[
+        # --     1], f'frame num({frames.shape[1]}) is not equal to CeCode length({ce_code_up.shape[0]})'
+
+        # -- Modified by Chu King on Oct 29, 2024 for pixel-wise CEP.
+        # -- ce_code_up_ = ce_code_up.view(self.frame_n, 1, 1, 1).expand_as(frames)
+        ce_code_up_ = ce_code_up.repeat(frames.shape[0], 1, 1, 1, 1)
+
+        ce_blur_img = torch.sum(ce_code_up_ * frames, axis=1) / self.frame_n
 
         sigma_range = self.sigma_range if self.training else self.test_sigma_range
         if isinstance(sigma_range, (int, float)):

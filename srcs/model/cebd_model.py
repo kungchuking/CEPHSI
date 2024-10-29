@@ -20,6 +20,7 @@ class CEBDNet(nn.Module):
             binary_fc=None,
             bd_net=None,
             in_channels=3,
+            patch_size=[720, 1280],
             out_channels=3):
         super(CEBDNet, self).__init__()
         self.ce_code_n = ce_code_n
@@ -28,7 +29,16 @@ class CEBDNet(nn.Module):
         # coded exposure blur net
         if ce_net == 'CEBlurNet':
             self.BlurNet = CEBlurNet(
-                sigma_range=sigma_range, test_sigma_range=test_sigma_range, ce_code_n=ce_code_n, frame_n=frame_n, ce_code_init=ce_code_init, opt_cecode=opt_cecode, binary_fc=binary_fc)
+                sigma_range=sigma_range,
+                test_sigma_range=test_sigma_range,
+                ce_code_n=ce_code_n,
+                frame_n=frame_n,
+                ce_code_init=ce_code_init,
+                opt_cecode=opt_cecode,
+                patch_size=patch_size,
+                # -- Added by Chu King on OCT 29, 2024 for grayscale images and pixelwise CEP.
+                in_channels=in_channels,
+                binary_fc=binary_fc)
         else:
             raise NotImplementedError(f'No model named {ce_net}')
 
@@ -42,7 +52,8 @@ class CEBDNet(nn.Module):
             self.DeBlurNet = MobileNetV2CAE(
                     in_channels=in_channels,
                     out_channels=out_channels,
-                    frame_n=self.frame_n)
+                    frame_n=self.frame_n,
+                    n_feats=1)
         else:
             raise NotImplementedError(f'No model named {bd_net}')
 

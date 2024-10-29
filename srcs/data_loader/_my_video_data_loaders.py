@@ -111,7 +111,7 @@ class VideoFrame_Dataset(Dataset):
             else:
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-            if self.patch_sz:
+            if self.patch_sz and self.patch_sz[0] >= 0 and self.patch_sz[1] >= 0:
                 if k == self.vid_idx[idx]:
                     # set the random crop point
                     img_sz = img.shape
@@ -146,6 +146,7 @@ class VideoFrame_Dataset(Dataset):
             image_maxv = np.iinfo(image_dtype).max  # 8/16 bit image -> 255/65535
             vid = vid + np.random.normal(0, image_maxv*noise_level, vid.shape)
             vid = vid.clip(0, image_maxv).astype(image_dtype)
+
 
         return vid.transpose(0, 3, 1, 2)
 
@@ -219,7 +220,7 @@ class VideoFrame_Dataset_all2CPU(Dataset):
 
         img_sz = vid[0].shape
         # crop to patch size
-        if self.patch_sz:
+        if self.patch_sz and self.patch_sz[0] >= 0 and self.patch_sz[1] >= 0:
             assert (img_sz[0] >= self.patch_sz[0]) and (img_sz[1] >= self.patch_sz[1]
                                                         ), 'error PATCH_SZ larger than image size'
             xmin = np.random.randint(0, img_sz[1]-self.patch_sz[1])

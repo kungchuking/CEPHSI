@@ -5,14 +5,17 @@ arch:
   sigma_range: ${sigma_range}
   ce_code_n: 8
   frame_n: ${frame_n}
-  ce_code_init: [1,1,1,0,0,1,0,1] # raskar8-03
+  # -- Modified by Chu King on Oct 29, 2024
+  # -- For now, we don't need to initialize the mask for CEP.
+  # -- ce_code_init: [1,1,1,0,0,1,0,1] # raskar8-03
   opt_cecode: false
   ce_net: CEBlurNet
   binary_fc: STEBinary_fc
   # -- bd_net: BDNeRV_RC
   bd_net: MobileNetV2CAE
-  in_channels: 1   # -- Gray-scale, 1-Tap, 1-Cam
-  out_channels: 1  # -- Gray-scale
+  in_channels: 1             # -- Gray-scale, 1-Tap, 1-Cam
+  out_channels: 1            # -- Gray-scale
+  patch_size: [256, 256]    # -- For Pixelwise Coded Exposure
 loss: {'main_loss':1, 'reblur_loss':0.2}
 main_loss:
   _target_: srcs.loss._pix_loss_cls.WeightedLoss

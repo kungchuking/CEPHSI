@@ -43,11 +43,17 @@ class Trainer(BaseTrainer):
         self.losses = self.config['loss']
 
     def _ce_reblur(self, output):
-        # frame_n should equal to ce_code_n cases
-        ce_weight = self.model.BlurNet.ce_weight.detach().squeeze()
+        # -- Modified by Chu King for pixel-wise CEP
+        # -- frame_n should equal to ce_code_n cases
+        # -- ce_weight = self.model.BlurNet.ce_weight.detach().squeeze()
+        ce_weight = self.model.BlurNet.ce_weight.detach()
         ce_code = ((torch.sign(ce_weight)+1)/2)
-        ce_code_ = torch.tensor(ce_code).view(1, -1, 1, 1, 1)
-        ce_output = torch.sum(torch.mul(output, ce_code_), dim=1)/len(ce_code)
+
+        # -- ce_code_ = torch.tensor(ce_code).view(1, -1, 1, 1, 1)
+        ce_code_ = ce_code.repeat(output.shape[0], 1, 1, 1, 1)
+
+        # -- ce_output = torch.sum(torch.mul(output, ce_code_), dim=1)/len(ce_code)
+        ce_output = torch.sum(torch.mul(output, ce_code_), dim=1) / ce_code_.shape[1]
         return ce_output
     
     def _after_iter(self, epoch, batch_idx, phase, loss, metrics, image_tensors: dict):
