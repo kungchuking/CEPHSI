@@ -49,11 +49,22 @@ class Trainer(BaseTrainer):
         ce_weight = self.model.BlurNet.ce_weight.detach()
         ce_code = ((torch.sign(ce_weight)+1)/2)
 
+        # -- Extract the shape of ce_weight
+        ce_code_n, in_channels, patch_size_1, patch_size_0, n_cam = ce_weight.shape
+
         # -- ce_code_ = torch.tensor(ce_code).view(1, -1, 1, 1, 1)
-        ce_code_ = ce_code.repeat(output.shape[0], 1, 1, 1, 1)
+        ce_code_ = ce_code.repeat(output.shape[0], 1, 1, 1, 1, 1)
 
         # -- ce_output = torch.sum(torch.mul(output, ce_code_), dim=1)/len(ce_code)
-        ce_output = torch.sum(torch.mul(output, ce_code_), dim=1) / ce_code_.shape[1]
+        # -- ce_output = torch.sum(torch.mul(output, ce_code_), dim=1) / ce_code_.shape[1]
+        if torch.cuda.is_available():
+            ce_output = torch.zeros(output.shape[0], in_channels * 2 * n_cam, patch_size_1, patch_size_0, device=self.device)
+        else:
+            ce_output = torch.zeros(output.shape[0], in_channels * 2 * n_cam, patch_size_1, patch_size_0, device="cpu")
+        for k in range(n_cam):
+            ce_output[:, (2*k)*in_channels:(2*k+1)*in_channels, :, :] = torch.sum(ce_code_[..., k] * output, axis=1) / ce_code_.shape[1]
+            ce_output[:, (2*k+1)*in_channels:(2*k+2)*in_channels, :, :] = torch.sum((1. - ce_code_[..., k]) * output, axis = 1) / ce_code_.shape[1]
+
         return ce_output
     
     def _after_iter(self, epoch, batch_idx, phase, loss, metrics, image_tensors: dict):
@@ -98,8 +109,10 @@ class Trainer(BaseTrainer):
 
             target = vid[:,::interp_scale]
 
+
             # -- That's where training starts.
             output, data, data_noisy = self.model(vid)
+
             output_ = torch.flatten(output, end_dim=1)
             target_ = torch.flatten(target, end_dim=1)
 

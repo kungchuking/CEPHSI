@@ -13,6 +13,7 @@ arch:
   binary_fc: STEBinary_fc
   # -- bd_net: BDNeRV_RC
   bd_net: MobileNetV2CAE
+  n_cam: 2                   # -- Multi-Camera Applications
   in_channels: 1             # -- Gray-scale, 1-Tap, 1-Cam
   out_channels: 1            # -- Gray-scale
   patch_size: [720, 1280]    # -- For Pixelwise Coded Exposure

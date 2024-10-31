@@ -20,6 +20,7 @@ class CEBDNet(nn.Module):
             binary_fc=None,
             bd_net=None,
             in_channels=3,
+            n_cam=2,
             patch_size=[720, 1280],
             out_channels=3):
         super(CEBDNet, self).__init__()
@@ -38,6 +39,7 @@ class CEBDNet(nn.Module):
                 patch_size=patch_size,
                 # -- Added by Chu King on OCT 29, 2024 for grayscale images and pixelwise CEP.
                 in_channels=in_channels,
+                n_cam=n_cam,
                 binary_fc=binary_fc)
         else:
             raise NotImplementedError(f'No model named {ce_net}')
@@ -53,7 +55,8 @@ class CEBDNet(nn.Module):
                     in_channels=in_channels,
                     out_channels=out_channels,
                     frame_n=self.frame_n,
-                    n_feats=1)
+                    n_feats=1,
+                    n_cam=n_cam)
         else:
             raise NotImplementedError(f'No model named {bd_net}')
 
@@ -61,4 +64,5 @@ class CEBDNet(nn.Module):
         ce_blur_img_noisy, time_idx, ce_code_up, ce_blur_img = self.BlurNet(frames)
 
         output = self.DeBlurNet(ce_blur=ce_blur_img_noisy, time_idx=time_idx, ce_code=ce_code_up)
+
         return output, ce_blur_img, ce_blur_img_noisy

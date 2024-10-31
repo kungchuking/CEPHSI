@@ -85,15 +85,17 @@ class MobileNetV2CAE(nn.Module):
             out_channels=3,
             num_classes=10,
             frame_n=8,
-            n_feats=2):
+            n_feats=2,
+            n_cam=2):
         super(MobileNetV2CAE, self).__init__()
 
+        self.in_channels = in_channels
         self.frame_n = frame_n
         self.encoder = nn.Sequential(
             # -- nn.Conv2d(in_channels, 32, kernel_size=3, stride=2, padding=1, bias=False),
             # -- Modified by Chu King on Oct 27, 2024
             # -- Preserve the original size of the image for the insertion of temporal embeddings later.
-            nn.Conv2d(in_channels, 8*n_feats, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(in_channels * 2 *n_cam , 8*n_feats, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(8*n_feats),
             nn.ReLU6(inplace=True),
             InvertedResidualBlock(8*n_feats, 4*n_feats, 1, 1),
@@ -154,7 +156,14 @@ class MobileNetV2CAE(nn.Module):
 
         x = self.decoder(x)
 
-        return torch.reshape(x, (-1, self.frame_n, *ce_blur.shape[-3:]))
+        # -- TODO: Work in Progress
+        if DEBUG:
+            print ("[OUTPUT-INFO] x.shape: ", x.shape)
+
+        # -- return torch.reshape(x, (-1, self.frame_n, *ce_blur.shape[-3:]))
+        # -- Modified by Chu King on OCT 31, 2024 for multi-tap multi-camera applications
+        # -- Now, the 3rd dimension doesn't just represent the number of input channels, but 2-tap and the number of cameras.
+        return torch.reshape(x, (-1, self.frame_n, self.in_channels, *ce_blur.shape[-2:]))
 
 """
 if DEBUG:
