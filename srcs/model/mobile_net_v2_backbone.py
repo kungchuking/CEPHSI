@@ -140,7 +140,7 @@ class MobileNetV2CAE(nn.Module):
             # -- nn.ConvTranspose2d(4*n_feats, in_channels, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False),
             nn.ConvTranspose2d(4*n_feats, out_channels*frame_n, kernel_size=3, stride=1, padding=1, output_padding=0, bias=False),
             # -- nn.Tanh()
-            nn.ReLU()
+            nn.Sigmoid()
         )
 
     def forward(self, ce_blur, time_idx=None, ce_code=None):
