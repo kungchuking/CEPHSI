@@ -137,7 +137,8 @@ class MobileNetV2CAE(nn.Module):
             # -- Changed the number of output channels from in_channels to frame_n * in_channels
             # -- nn.ConvTranspose2d(4*n_feats, in_channels, kernel_size=3, stride=2, padding=1, output_padding=1, bias=False),
             nn.ConvTranspose2d(4*n_feats, out_channels*frame_n, kernel_size=3, stride=1, padding=1, output_padding=0, bias=False),
-            nn.Tanh()
+            # -- nn.Tanh()
+            nn.ReLU()
         )
 
     def forward(self, ce_blur, time_idx=None, ce_code=None):

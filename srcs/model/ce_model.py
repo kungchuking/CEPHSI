@@ -73,7 +73,7 @@ class CEBlurNet(nn.Module):
         # -- self.upsample_matrix is an identity matrix when we are not doing temporal upsampling
         # -- ce_code_up = torch.matmul(self.upsample_matrix.to(device), ce_code)
         # -- Modified by Chu King on Oct 29, 2024 for pixel-wise CEP
-        ce_code_up = torch.zeros(self.upsample_factor * self.ce_code_n, self.in_channels, *self.patch_size)
+        ce_code_up = torch.zeros(self.upsample_factor * self.ce_code_n, self.in_channels, *self.patch_size, device=device)
 
         # -- Fill the upsampled matrix
         # -- We are not using matrix multiplication for CEP, as the multiplication of two high-dimensional tensors is hard to visualize.
@@ -86,7 +86,7 @@ class CEBlurNet(nn.Module):
 
         # -- Modified by Chu King on Oct 29, 2024 for pixel-wise CEP.
         # -- ce_code_up_ = ce_code_up.view(self.frame_n, 1, 1, 1).expand_as(frames)
-        ce_code_up_ = ce_code_up.repeat(frames.shape[0], 1, 1, 1, 1)
+        ce_code_up_ = ce_code_up.repeat(frames.shape[0], 1, 1, 1, 1).to(device)
 
         ce_blur_img = torch.sum(ce_code_up_ * frames, axis=1) / self.frame_n
 
