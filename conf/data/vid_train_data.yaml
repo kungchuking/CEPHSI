@@ -5,6 +5,7 @@ frame_num: ${frame_n}
 batch_size: 8
 # -- patch_size: 256
 # -- patch_size: [720, 1280]
+# -- patch_size: [32, 32]
 patch_size: [-1, -1]
 # -- tform_op: 'all'
 tform_op: 'flip'

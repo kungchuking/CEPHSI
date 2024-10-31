@@ -17,6 +17,7 @@ arch:
   in_channels: 1             # -- Gray-scale, 1-Tap, 1-Cam
   out_channels: 1            # -- Gray-scale
   patch_size: [720, 1280]    # -- For Pixelwise Coded Exposure
+  # -- patch_size: [32, 32]    # -- For Pixelwise Coded Exposure
 loss: {'main_loss':1, 'reblur_loss':0.2}
 main_loss:
   _target_: srcs.loss._pix_loss_cls.WeightedLoss
